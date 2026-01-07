@@ -123,6 +123,56 @@ def le_sinz(x, k, f, start_from):
 def ge_sinz(x, k, f, start_from):
     return le_sinz(list(map(lambda y: -y, x)), len(x) - k, f, start_from)
 
+
+def le_naive(x, k, f, start_from):
+    # s_i_j = x[0] + x[1] + ... x[i - 1] == j
+
+    # a = b <=> (not a or b) and (a or not b)
+
+    # s_0_0 = True <=> (s_0_0)
+    # s_0_j, j > 0 = False <=> (-s_0_j)
+
+    # s_i_j = (s_{i - 1}_{j} and not x[i - 1]) or (s_{i - 1}_{j - 1} and x[i - 1])
+
+    def eq_or(x, y, z):
+        f.append([-x, y, z])
+        f.append([x, -y])
+        f.append([x, -z])
+
+    def eq_and(x, y, z):
+        f.append([-x, y])
+        f.append([-x, z])
+        f.append([x, -y, -z])
+
+    n = len(x)
+    s = dict()
+    for i in range(n + 1):
+        for j in range(n + 1):
+            s[(i, j)] = start_from
+            start_from += 1
+
+    f.append([s[(0, 0)]])
+    for j in range(1, n + 1):
+        f.append([-s[(0, j)]])
+
+    for i in range(1, n + 1):
+        eq_and(s[(i, 0)], s[(i - 1, 0)], -x[i - 1])
+        for j in range(1, n + 1):
+            h1, h2 = start_from, start_from + 1
+            start_from += 2
+            eq_and(h1, s[(i - 1, j)], -x[i - 1])
+            eq_and(h2, s[(i - 1, j - 1)], x[i - 1])
+            eq_or(s[(i, j)], h1, h2)
+
+    f.append([s[(n, j)] for j in range(0, k + 1)])
+    for j in range(k + 1, n + 1):
+        f.append([-s[(n, j)]])
+    return start_from
+
+def ge_naive(x, k, f, start_from):
+    return le_naive(list(map(lambda y: -y, x)), len(x) - k, f, start_from)
+
+
 def clause_to_str(clause):
     return ' '.join(map(str, clause)) + ' 0'
 
@@ -133,6 +183,11 @@ def sum_values(d):
     return sum
 
 def create_cnf_clauses(graph, list_of_clients, list_of_stations, lower_bound):
+    def eq_or(x, ys):
+        clause_1 = [-x] + ys
+        clauses_2 = [[x, -y] for y in ys]
+        return [clause_1] + clauses_2
+
     soft_clauses = dict()
     hard_clauses = dict()
 
@@ -164,6 +219,38 @@ def create_cnf_clauses(graph, list_of_clients, list_of_stations, lower_bound):
         hard_clauses[key] = top
 
     return hard_clauses, soft_clauses, var_num - 1, top
+
+def create_reversed_cnf_clauses(graph, list_of_clients, list_of_stations, lower_bound):
+    soft_clauses = dict()
+    hard_clauses = dict()
+
+    station_variables = dict()
+
+    var_num = 1
+
+    for station in list_of_stations:
+        station_variables[station[0]] = var_num
+        var_num += 1
+
+    sinz_clauses = []
+    var_num = ge_sinz(list(station_variables.values()), lower_bound, sinz_clauses, var_num)
+    for clause in sinz_clauses:
+        add_clause(hard_clauses, clause_to_str(clause))
+
+    for client in list_of_clients:
+        client_number = client[0]
+        clause = []
+        for station in graph[client_number]:
+            station_number = station[0]
+            clause.append(station_variables[station_number])
+        add_clause(soft_clauses, clause_to_str(clause))
+
+    top = sum_values(soft_clauses) + 1
+    for key in hard_clauses:
+        hard_clauses[key] = top
+
+    return hard_clauses, soft_clauses, var_num - 1, top
+
 
 def create_folders():
     if not os.path.exists('./CNFs/'):
@@ -200,8 +287,6 @@ counter = 0
 while counter < nof_tests:
     start_test_time = time.time()
     out_name = 'test_' + str(counter) + '_' + str(nof_stations)+'_'+str(nof_clients)+'_'+str(min_weights_sum)+'_radius'+radius
-    out_name_cnf = './CNFs/' + out_name + '.cnf'
-    out_name_stations = './Stations/' + out_name + '.stations'
     out_name_wcnf = './WCNFs/' + out_name + '.wcnf'
 
     list_of_stations = create_stations(nof_stations,max_x,max_y,radius)
