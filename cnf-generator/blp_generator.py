@@ -211,7 +211,7 @@ def create_cnf_clauses(graph, list_of_clients, list_of_stations, lower_bound):
 
     client_vars = [client_variables[client[0]] for client in list_of_clients]
     sinz_clauses = []
-    var_num = ge_sinz(client_vars, lower_bound, sinz_clauses, var_num)
+    var_num = ge_naive(client_vars, lower_bound, sinz_clauses, var_num)
     for clause in sinz_clauses:
         add_clause(hard_clauses, clause_to_str(clause))
     top = sum_values(soft_clauses) + 1
@@ -220,7 +220,7 @@ def create_cnf_clauses(graph, list_of_clients, list_of_stations, lower_bound):
 
     return hard_clauses, soft_clauses, var_num - 1, top
 
-def create_reversed_cnf_clauses(graph, list_of_clients, list_of_stations, lower_bound):
+def create_reversed_cnf_clauses(graph, list_of_clients, list_of_stations, upper_bound):
     soft_clauses = dict()
     hard_clauses = dict()
 
@@ -233,15 +233,14 @@ def create_reversed_cnf_clauses(graph, list_of_clients, list_of_stations, lower_
         var_num += 1
 
     sinz_clauses = []
-    var_num = ge_sinz(list(station_variables.values()), lower_bound, sinz_clauses, var_num)
+    var_num = le_naive(list(station_variables.values()), upper_bound, sinz_clauses, var_num)
     for clause in sinz_clauses:
         add_clause(hard_clauses, clause_to_str(clause))
 
     for client in list_of_clients:
         client_number = client[0]
         clause = []
-        for station in graph[client_number]:
-            station_number = station[0]
+        for station_number in graph[client_number]:
             clause.append(station_variables[station_number])
         add_clause(soft_clauses, clause_to_str(clause))
 
@@ -286,29 +285,51 @@ create_folders()
 counter = 0
 while counter < nof_tests:
     start_test_time = time.time()
-    out_name = 'test_' + str(counter) + '_' + str(nof_stations)+'_'+str(nof_clients)+'_'+str(min_weights_sum)+'_radius'+radius
-    out_name_wcnf = './WCNFs/' + out_name + '.wcnf'
+
 
     list_of_stations = create_stations(nof_stations,max_x,max_y,radius)
     list_of_clients = create_clients(nof_clients,max_x,max_y)
 
     nof_zeros, graph  = create_graph(list_of_clients, list_of_stations)
-    hard_clauses, soft_clauses, vars_num, top = create_cnf_clauses(graph, list_of_clients, list_of_stations, satisfied_clients_lower_bound)
 
     if nof_clients - nof_zeros < min_weights_sum:
         print('ERROR Sum of weights is too low:',nof_clients - nof_zeros,'/',min_weights_sum)
         continue
 
-    comment = 'c ' + str(nof_stations) + ' ' + str(nof_clients) + ' ' + str(min_weights_sum)
-    header = 'p wcnf ' + str(vars_num) + ' ' + str(len(hard_clauses) + len(soft_clauses)) + ' ' + str(top)
-    with open(out_name_wcnf,'w') as out_file:
-        print(comment, file=out_file)
-        print(header, file=out_file)
-        for key in hard_clauses:
-            print(hard_clauses[key],key,file=out_file)
-        for key in soft_clauses:
-            print(soft_clauses[key],key,file=out_file)
-    print('Test', counter, 'WCNF done, total runtime =',time.time()-start_test_time)
+    if False:
+        out_name = 'test_' + str(counter) + '_' + str(nof_stations)+'_'+str(nof_clients)+'_'+str(min_weights_sum)+'_radius'+radius+'_SClientsLBound'+str(satisfied_clients_lower_bound)
+        out_name_wcnf = './WCNFs/' + out_name + '.wcnf'
+        hard_clauses, soft_clauses, vars_num, top = create_cnf_clauses(graph, list_of_clients, list_of_stations, satisfied_clients_lower_bound)
+
+        comment = 'c ' + str(nof_stations) + ' ' + str(nof_clients) + ' ' + str(min_weights_sum)
+        header = 'p wcnf ' + str(vars_num) + ' ' + str(len(hard_clauses) + len(soft_clauses)) + ' ' + str(top)
+        with open(out_name_wcnf,'w') as out_file:
+            print(comment, file=out_file)
+            print(header, file=out_file)
+            for key in hard_clauses:
+                print(hard_clauses[key],key,file=out_file)
+            for key in soft_clauses:
+                print(soft_clauses[key],key,file=out_file)
+        print('Test', counter, 'WCNF done, total runtime =',time.time()-start_test_time)
+    else:
+        for l in range(1, len(list_of_stations) + 1):
+            out_name = 'test_' + str(counter) + '_' + str(nof_stations)+'_'+str(nof_clients)+'_'+str(min_weights_sum)+'_radius'+radius+'_SClientsLBound'+str(satisfied_clients_lower_bound)+'_l'+str(l)
+            out_name_wcnf = './WCNFs/' + out_name + '.wcnf'
+            hard_clauses, soft_clauses, vars_num, top = create_reversed_cnf_clauses(graph, list_of_clients, list_of_stations, l)
+
+            comment = 'c ' + str(nof_stations) + ' ' + str(nof_clients) + ' ' + str(min_weights_sum)
+            header = 'p wcnf ' + str(vars_num) + ' ' + str(len(hard_clauses) + len(soft_clauses)) + ' ' + str(top)
+            with open(out_name_wcnf,'w') as out_file:
+                print(comment, file=out_file)
+                print(header, file=out_file)
+                for key in hard_clauses:
+                    print(hard_clauses[key],key,file=out_file)
+                for key in soft_clauses:
+                    print(soft_clauses[key],key,file=out_file)
+            print('Test', counter, 'WCNF done, total runtime =',time.time()-start_test_time)
+
+
+
     counter += 1
 
 print(nof_tests, 'tests created, total runtime', time.time()-start_time)
