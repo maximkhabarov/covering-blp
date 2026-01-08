@@ -62,7 +62,6 @@ def compute_distance(station, client):
     dy = station[2] - client[2]
     return math.sqrt(dx*dx + dy*dy)
 
-
 def create_graph(list_of_clients, list_of_stations):
     graph = dict()
     nof_zeros = 0
@@ -123,7 +122,6 @@ def le_sinz(x, k, f, start_from):
 def ge_sinz(x, k, f, start_from):
     return le_sinz(list(map(lambda y: -y, x)), len(x) - k, f, start_from)
 
-
 def le_naive(x, k, f, start_from):
     # s_i_j = x[0] + x[1] + ... x[i - 1] == j
 
@@ -171,7 +169,6 @@ def le_naive(x, k, f, start_from):
 
 def ge_naive(x, k, f, start_from):
     return le_naive(list(map(lambda y: -y, x)), len(x) - k, f, start_from)
-
 
 def clause_to_str(clause):
     return ' '.join(map(str, clause)) + ' 0'
@@ -250,7 +247,6 @@ def create_reversed_cnf_clauses(graph, list_of_clients, list_of_stations, upper_
 
     return hard_clauses, soft_clauses, var_num - 1, top
 
-
 def create_folders():
     if not os.path.exists('./CNFs/'):
         os.makedirs('./CNFs/')
@@ -327,8 +323,6 @@ while counter < nof_tests:
                 for key in soft_clauses:
                     print(soft_clauses[key],key,file=out_file)
             print('Test', counter, 'WCNF done, total runtime =',time.time()-start_test_time)
-
-
 
     counter += 1
 
