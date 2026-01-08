@@ -237,6 +237,7 @@ def create_reversed_cnf_clauses(graph, list_of_clients, list_of_stations, upper_
     for client in list_of_clients:
         client_number = client[0]
         clause = []
+        # TODO: what if clause is empty???
         for station_number in graph[client_number]:
             clause.append(station_variables[station_number])
         add_clause(soft_clauses, clause_to_str(clause))
