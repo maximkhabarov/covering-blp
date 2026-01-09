@@ -1,6 +1,7 @@
 #include "Assignment.h"
 
 #include <cstddef>
+#include <fstream>
 #include <iostream>
 
 int positiveLiterals(const Assignment& assignment)
@@ -16,11 +17,11 @@ int positiveLiterals(const Assignment& assignment)
     return res;
 }
 
-void print(const Assignment& assignment)
+void print(std::ofstream &of, const Assignment& assignment)
 {
     for (int x : assignment)
     {
-        std::cout << x << " ";
+        of << x << " ";
     }
-    std::cout << std::endl;
+    of << std::endl;
 }

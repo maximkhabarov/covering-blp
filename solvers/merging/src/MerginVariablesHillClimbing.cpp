@@ -5,20 +5,24 @@
 
 #include <iostream>
 #include <cassert>
+#include <filesystem>
+#include <fstream>
 
 int main(int argc, char**argv)
 {
-    assert(11 == argc);
+    assert(12 == argc);
+
     const size_t test_number = std::stoi(argv[1]);
     const size_t stations_number = std::stoi(argv[2]);
     const size_t clients_number = std::stoi(argv[3]);
-    const size_t satisfied_clients_lower_bound = std::stoi(argv[4]);
-    const std::string radius = argv[5];
+    const std::string radius = argv[4];
+    const size_t satisfied_clients_lower_bound = std::stoi(argv[5]);
     const size_t seed = std::stoi(argv[6]);
     const size_t x = std::stoi(argv[7]);
     const size_t y = std::stoi(argv[8]);
-    size_t merging_restarts_left = std::stoi(argv[9]);
-    const size_t blockSize = std::stoi(argv[10]);
+    const size_t blockSize = std::stoi(argv[9]);
+    size_t merging_restarts_left = std::stoi(argv[10]);
+    const std::string output_folder = argv[11];
 
     const size_t unsatisfied_clients_upper_bound = clients_number - satisfied_clients_lower_bound;
 
@@ -42,22 +46,25 @@ int main(int argc, char**argv)
             + "_y"
             + std::to_string(y);
 
+    std::ofstream of(output_folder + "/" + subfolder_name + ".txt");
+    assert(not of.fail());
+
     size_t L = 0, R = stations_number;
     while (R - L > 1)
     {
         size_t M = (L + R) / 2;
-        std::string folder = "../../cnf-generator/WCNFs/";
+        std::string folder = "../cnf-generator/WCNFs/";
         folder += subfolder_name + "/";
-        std::string filename = folder + std::to_string(M) + ".wcnf";
-        std::cout << "Stations upper bound: " << M << std::endl;
+        std::string filename = std::to_string(M) + ".wcnf";
+        of << "Stations upper bound: " << M << std::endl;
         Formula f = readFormula(folder + filename);
-        std::cout << "core: ";
-        for (int x : f.coreVariables) std::cout << x << " ";
-        std::cout << std::endl;
-        std::cout << "hard clauses count: " << f.hardClauses.size() << std::endl;
-        std::cout << "soft clauses count: " << f.softClauses.size() << std::endl;
-        std::cout << "hard clauses weight: " << f.hardClausesWeight << std::endl;
-        std::cout << "soft clauses weight: " << f.softClausesWeight << std::endl;
+        of << "core: ";
+        for (int x : f.coreVariables) of << x << " ";
+        of << std::endl;
+        of << "hard clauses count: " << f.hardClauses.size() << std::endl;
+        of << "soft clauses count: " << f.softClauses.size() << std::endl;
+        of << "hard clauses weight: " << f.hardClausesWeight << std::endl;
+        of << "soft clauses weight: " << f.softClausesWeight << std::endl;
 
         Assignment init_assignment;
         for (size_t i = 0; i < f.coreVariables.size(); i++)
@@ -68,8 +75,8 @@ int main(int argc, char**argv)
                 init_assignment.back() *= -1;
             }
         }
-        std::cout << "start target value: " << unitPropogationForward(f, init_assignment) << std::endl;
-        std::cout << "stations turned: " << positiveLiterals(init_assignment) << std::endl;
+        of << "start target value: " << unitPropogationForward(f, init_assignment) << std::endl;
+        of << "stations turned: " << positiveLiterals(init_assignment) << std::endl;
 
         BestInNeighbourhood r;
         r.assignment = init_assignment;
@@ -82,10 +89,10 @@ int main(int argc, char**argv)
             const auto res = exploreNeighbourhood(merging, r.assignment, [&f, M](const Assignment& assignment){
                 return unitPropogationForward(f, assignment);
             });
-            std::cout << "Target value: " << res.targetValue << std::endl;
-            std::cout << "Stations turned: " << positiveLiterals(res.assignment) << std::endl;
-            std::cout << "Assignment: ";
-            print(res.assignment);
+            of << "Target value: " << res.targetValue << std::endl;
+            of << "Stations turned: " << positiveLiterals(res.assignment) << std::endl;
+            of << "Assignment: ";
+            print(of, res.assignment);
 
             if (r.targetValue < res.targetValue)
             {
@@ -104,17 +111,17 @@ int main(int argc, char**argv)
 
         if (r.targetValue >= (int)(clients_number - unsatisfied_clients_upper_bound))
         {
-            std::cout << M << " Satisfied" << std::endl;
+            of << M << " Satisfied" << std::endl;
             R = M;
         }
         else {
-            std::cout << M << " Unsatisfied" << std::endl;
+            of << M << " Unsatisfied" << std::endl;
             L = M;
         }
     }
 
-    std::cout << "Result for problem: " << subfolder_name << std::endl;
-    std::cout << "Minimum number of stations required: " << R << std::endl;
+    of << "Result for problem: " << subfolder_name << std::endl;
+    of << "Minimum number of stations required: " << R << std::endl;
 
     return 0;
 }

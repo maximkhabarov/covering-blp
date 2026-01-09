@@ -4,8 +4,8 @@ import sys
 test_number = int(sys.argv[1])
 stations_number = int(sys.argv[2])
 clients_number = int(sys.argv[3])
-satisfied_clients_lower_bound = int(sys.argv[4])
-radius = sys.argv[5]
+radius = sys.argv[4]
+satisfied_clients_lower_bound = int(sys.argv[5])
 seed = int(sys.argv[6])
 x = int(sys.argv[7])
 y = int(sys.argv[8])
@@ -17,7 +17,7 @@ def try_bound(stations_bound):
     path = folder + subfolder_name + file_name
     assert os.path.exists(path)
 
-    out_file = f"{subfolder_name}_{stations_bound}.txt"
+    out_file = f"loandra_logs/{subfolder_name}_{stations_bound}.txt"
 
     os.system(f"./loandra/loandra -old-format {path} > {out_file}")
 
@@ -29,24 +29,32 @@ def try_bound(stations_bound):
                 if int(line.split()[1]) <= clients_number - satisfied_clients_lower_bound:
                     solved = True
                     break
-    os.system(f"rm {out_file}")
 
     return solved
 
-L = 0
-R = stations_number
+with open(f"loandra_results/res_{subfolder_name}.txt", "w") as f:
+    f.write("Solving started\n")
+    f.flush()
 
-while R - L > 1:
-    stations_bound = (L + R) // 2
+    L = 0
+    R = stations_number
 
-    if try_bound(stations_bound):
-        R = stations_bound
+    while R - L > 1:
+        stations_bound = (L + R) // 2
+
+        f.write(f"Solve for bound {stations_bound}\n")
+        f.flush()
+
+        if try_bound(stations_bound):
+            R = stations_bound
+        else:
+            L = stations_bound
+
+    f.write("Result for problem:" + subfolder_name + "\n")
+    f.flush()
+
+    if not try_bound(R):
+        f.write("Minimum number of stations required: Unsat\n")
     else:
-        L = stations_bound
-
-print("Result for problem:", subfolder_name)
-
-if not try_bound(R):
-    print("Minimum number of stations required: Unsat")
-else:
-    print("Minimum number of stations required:", R)
+        f.write("Minimum number of stations required:" + str(R) + "\n")
+    f.flush()
