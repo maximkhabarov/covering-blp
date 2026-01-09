@@ -1,6 +1,6 @@
 import os
 
-TL = "10000s"
+TL = "1000s"
 
 os.makedirs("loandra_results", exist_ok=True)
 os.makedirs("loandra_logs", exist_ok=True)
