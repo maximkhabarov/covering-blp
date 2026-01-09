@@ -1,7 +1,7 @@
 import os
 import sys
 
-TL = "1000"
+TL = "1000s"
 block_size = int(sys.argv[1])
 restarts = int(sys.argv[2])
 
