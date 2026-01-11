@@ -1,4 +1,4 @@
-CXX=g++-12
+CXX=g++
 SRC_DIR=src
 OBJ_DIR=obj
 SRC_FILES=$(wildcard $(SRC_DIR)/*.cpp)

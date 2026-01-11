@@ -21,7 +21,7 @@ int main(int argc, char**argv)
     const size_t x = std::stoi(argv[7]);
     const size_t y = std::stoi(argv[8]);
     const size_t blockSize = std::stoi(argv[9]);
-    size_t merging_restarts_left = std::stoi(argv[10]);
+    const size_t merging_restarts_limit = std::stoi(argv[10]);
     const std::string output_folder = argv[11];
 
     const size_t unsatisfied_clients_upper_bound = clients_number - satisfied_clients_lower_bound;
@@ -83,7 +83,8 @@ int main(int argc, char**argv)
         r.targetValue = unitPropogationForward(f, init_assignment);
 
         Merging merging = createUniformMerging(f.coreVariables.size(), f.coreVariables.size() / blockSize, rnd);
-
+	size_t merging_restarts_left = merging_restarts_limit;
+		
         while (true)
         {
             const auto res = exploreNeighbourhood(merging, r.assignment, [&f, M](const Assignment& assignment){
