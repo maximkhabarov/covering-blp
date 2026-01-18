@@ -1,0 +1,1 @@
+Optimal value: 32.0
