@@ -5,7 +5,7 @@ import argparse
 import math
 import os
 import functools
-
+from pyscipopt import Model, quicksum
 
 print = functools.partial(print, flush=True)
 
@@ -179,8 +179,38 @@ def create_folders():
     if not os.path.exists('./WCNFs/'):
         os.makedirs('./WCNFs/')
         print('Directory ./WCNFs/ is created.')
+    if not os.path.exists('./ILPs/'):
+        os.makedirs('./ILPs/')
+        print('Directory ./ILPs/ is created.')
 
 #============================================================================#
+
+
+def create_ilp_problem(graph, list_of_stations, list_of_clients, upper_bound):
+    station_variables = dict()
+    client_variables = dict()
+    model = Model("Problem")
+
+    var_num = 1
+
+    for station in list_of_stations:
+        station_variables[station[0]] = model.addVar("s" + str(var_num), vtype="B")
+        var_num += 1
+
+    for client in graph:
+        client_variables[client] = model.addVar("c" + str(var_num), vtype="B")
+        var_num += 1
+
+    model.addCons(quicksum(c for _, c in client_variables.items()) >= upper_bound)
+
+    model.setObjective(quicksum(s for _, s in station_variables.items()))
+
+    for client in graph:
+        model.addCons(quicksum(station_variables[station] for station in graph[client]) >= client_variables[client])
+
+    return model
+
+
 
 #Параметры
 start_time = time.time()
@@ -212,28 +242,33 @@ while counter < nof_tests:
         print('ERROR Clients is not enough:', len(graph), nof_clients)
         continue
 
-    folder_name = 'test_' + str(counter) + '_s' + str(nof_stations) + '_c' + str(nof_clients) + '_radius' + radius + '_SClientsLBound' + str(satisfied_clients_lower_bound) + "_seed" + str(seed) + "_x" + str(max_x) + "_y" + str(max_y)
+    file_name = 'test_' + str(counter) + '_s' + str(nof_stations) + '_c' + str(nof_clients) + '_radius' + radius + '_SClientsLBound' + str(satisfied_clients_lower_bound) + "_seed" + str(seed) + "_x" + str(max_x) + "_y" + str(max_y)
 
-    if not os.path.exists("./WCNFs/" + folder_name):
-        os.makedirs("./WCNFs/" + folder_name)
+    model = create_ilp_problem(graph, list_of_stations, list_of_clients, satisfied_clients_lower_bound)
+    model.writeProblem(filename=f"ILPs/{file_name}.mps")
 
-    for l in range(1, len(list_of_stations) + 1):
-        out_name = str(l)
-        out_name_wcnf = './WCNFs/' +folder_name +'/' + out_name + '.wcnf'
-        hard_clauses, soft_clauses, vars_num, top, core_variables = create_reversed_cnf_clauses(graph, list_of_stations, l)
+    # folder_name = 'test_' + str(counter) + '_s' + str(nof_stations) + '_c' + str(nof_clients) + '_radius' + radius + '_SClientsLBound' + str(satisfied_clients_lower_bound) + "_seed" + str(seed) + "_x" + str(max_x) + "_y" + str(max_y)
 
-        comment = 'c ' + str(nof_stations) + ' ' + str(nof_clients) + ' ' + str(satisfied_clients_lower_bound)
-        core_variables = 'c core ' + ' '.join(map(str, core_variables))
-        header = 'p wcnf ' + str(vars_num) + ' ' + str(len(hard_clauses) + len(soft_clauses)) + ' ' + str(top)
-        with open(out_name_wcnf,'w') as out_file:
-            print(comment, file=out_file)
-            print(core_variables, file=out_file)
-            print(header, file=out_file)
-            for key in hard_clauses:
-                print(hard_clauses[key],key,file=out_file)
-            for key in soft_clauses:
-                print(soft_clauses[key],key,file=out_file)
-        print('Test', counter, 'WCNF done, total runtime =',time.time()-start_test_time)
+    # if not os.path.exists("./WCNFs/" + folder_name):
+    #     os.makedirs("./WCNFs/" + folder_name)
+
+    # for l in range(1, len(list_of_stations) + 1):
+    #     out_name = str(l)
+    #     out_name_wcnf = './WCNFs/' +folder_name +'/' + out_name + '.wcnf'
+    #     hard_clauses, soft_clauses, vars_num, top, core_variables = create_reversed_cnf_clauses(graph, list_of_stations, l)
+
+    #     comment = 'c ' + str(nof_stations) + ' ' + str(nof_clients) + ' ' + str(satisfied_clients_lower_bound)
+    #     core_variables = 'c core ' + ' '.join(map(str, core_variables))
+    #     header = 'p wcnf ' + str(vars_num) + ' ' + str(len(hard_clauses) + len(soft_clauses)) + ' ' + str(top)
+    #     with open(out_name_wcnf,'w') as out_file:
+    #         print(comment, file=out_file)
+    #         print(core_variables, file=out_file)
+    #         print(header, file=out_file)
+    #         for key in hard_clauses:
+    #             print(hard_clauses[key],key,file=out_file)
+    #         for key in soft_clauses:
+    #             print(soft_clauses[key],key,file=out_file)
+    #     print('Test', counter, 'WCNF done, total runtime =',time.time()-start_test_time)
 
     counter += 1
 
