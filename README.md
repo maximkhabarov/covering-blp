@@ -57,7 +57,7 @@ python generate.py
 
 | Solver          | Command |
 |----------------|---------|
-| Greedy          | `./greedy instance.wcnf` |
+| Greedy          | `./main instance.wcnf` |
 | MVHC / PMHC     | `./main instance.wcnf block_size iterations_limit` |
 | SCIP            | `python scip_solver.py instance.mps` |
 | Loandra         | `python run_loandra.py instance.wcnf` |
