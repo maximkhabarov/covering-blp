@@ -1,6 +1,3 @@
-Here is a shorter, cleaner version of the README.
-
-```markdown
 # BLP Problem Solvers
 
 Comparison of different solvers for the **Branch Location Problem (BLP)**.  
