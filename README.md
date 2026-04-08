@@ -33,7 +33,7 @@ Includes instance generators, greedy / merging-based heuristics, SCIP, and Loand
 
 ```bash
 git clone https://github.com/yourusername/BLP-problem-solvers.git
-git clone github.com/jezberg/loandra](https://github.com/jezberg/loandra
+git clone github.com/jezberg/loandra
 pip install pyscipopt python-sat
 cd solvers
 cd merging && make
@@ -57,15 +57,15 @@ python generate.py
 
 | Solver          | Command |
 |----------------|---------|
-| Greedy          | `./greedy instance.cnf` |
-| MVHC / PMHC     | `./mvhc instance.cnf` / `./pmhc instance.cnf` |
-| SCIP            | `python scip_solver.py --ilp instance.lp` |
-| Loandra         | `python run_loandra.py --cnf instance.cnf` |
+| Greedy          | `./greedy instance.wcnf` |
+| MVHC / PMHC     | `./main instance.wcnf block_size iterations_limit` |
+| SCIP            | `python scip_solver.py instance.mps` |
+| Loandra         | `python run_loandra.py instance.wcnf` |
 
 
 ## Running on a Cluster
 
-Edit and submit the provided `*.sh` scripts (SLURM/GridEngine):
+Edit and submit the provided `*.sh` scripts (SLURM):
 
 ```bash
 sbatch task_loandra.sh
